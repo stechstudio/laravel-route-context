@@ -16,26 +16,33 @@ composer require stechstudio/laravel-route-context
 
 The idea is that sometimes you want to reuse a controller method or Livewire fullpage component, while providing additional context at the routing layer.
 
-Imagine you need to list support tickets, and you have a controller and view that handles this. You have multiple endpoints where tickets might be displayed in a slightly different manner. You might, say, have a 'tickets/my' route that only lists your own assigned tickets.
+Imagine you need to list support tickets, and you have a controller and view that handles this. You have multiple endpoints where tickets might be displayed in a slightly different manner.
 
 With this package you can specify additional context right alongside your routes like this:
 
 ```php
-Route::get('tickets', [TicketController::class, 'index'])->with(['user' => null]);
-Route::get('tickets/my', [TicketController::class, 'index'])->with(['user' => fn() => auth()->user()]);
+Route::get('tickets', [TicketController::class, 'index']);
+Route::get('tickets/archived', [TicketController::class, 'index'])->with([
+    'archived' => true
+]);
+Route::get('tickets/mine', [TicketController::class, 'index'])->with([
+    'user' => fn() => auth()->user()
+]);
 Route::get('tickets/{user}', [TicketController::class, 'index']);
 ```
 
 Now in your `TicketController` you can inject the `$user` variable:
 
 ```php
-public function index(User $user) {
-    $query = Tickets::query()
-        ->when($user->exists, fn($q) => $q->where('user', $user));
+public function index(User $user, $archived = false) {
+    $tickets = Tickets::query()
+        ->when($user->exists, fn($q) => $q->where('user_id', $user->id))
+        ->when(!$archived, fn($q) => $q->whereNull('archived_at'))
+        ->paginate();
 }
 ```
 
-In other words, you can re-use controllers/views or even Livewire fullpage components where you just need a slight change of context, simply by providing this context in your routes file.
+Notice that context values can be callbacks, if you need it evaluated after your app has bootstrapped, session is started, auth is available, etc.
 
 ## License
 
