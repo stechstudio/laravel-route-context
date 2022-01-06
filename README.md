@@ -31,7 +31,7 @@ Route::get('tickets/mine', [TicketController::class, 'index'])->with([
 Route::get('tickets/{user}', [TicketController::class, 'index']);
 ```
 
-Now in your `TicketController` you can inject the `$user` variable:
+Now in your `TicketController` you can inject your context variables, just as if they had been route parameters:
 
 ```php
 public function index(User $user, $archived = false) {
